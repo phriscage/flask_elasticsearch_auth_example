@@ -25,8 +25,8 @@ def connect_db():
     """ connect to couchbase """
     try:
         db_client = Elasticsearch(
-            [{'host': ELASTICSEARCH_HOST, 'port': ELASTICSEARCH_PORT}], 
-            use_ssl=True,
+            [{'host': ELASTICSEARCH_HOST, 'port': ELASTICSEARCH_PORT}],
+            #use_ssl=True,)
             sniff_on_connection_fail=True,)
     except Exception as error:
         raise
@@ -56,8 +56,8 @@ def create_app():
     ## add each api Blueprint and create the base route
     from example.v1.api.auth.views import auth
     app.register_blueprint(auth, url_prefix="/v1/auth")
-    #from example.v1.api.users.views import users
-    #app.register_blueprint(users, url_prefix="/v1/users")
+    from example.v1.api.users.views import users
+    app.register_blueprint(users, url_prefix="/v1/users")
 
     return app
 

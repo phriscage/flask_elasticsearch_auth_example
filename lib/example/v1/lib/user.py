@@ -11,9 +11,8 @@ import re
 import logging
 from werkzeug import generate_password_hash, check_password_hash
 
-
 EMAIL_REGEX = re.compile(r'[^@]+@[^@]+\.[^@]+')
-REQUIRED_ARGS = ('db_client', 'email_address')
+REQUIRED_ARGS = ('email_address',)
 KEY_NAME = 'email_address'
 
 logger = logging.getLogger(__name__)
@@ -24,10 +23,9 @@ class User(object):
     def __init__(self, **kwargs):
         """ instantiate the class """
         self.key = None
-        self.values = {}
-        self.db_client = None
+        self.values = {'_type': self.__class__.__name__.lower() }
         self._validate_args(**kwargs)
-        self.set_key(self.__class__.__name__.lower(), kwargs[KEY_NAME])
+        self._set_key(kwargs[KEY_NAME])
         self.current_time = time.time()
 
     def _validate_args(self, **kwargs):
@@ -38,10 +36,7 @@ class User(object):
                 message = "'%s' is missing." % req_arg
                 logger.warn(message)
                 raise ValueError(message)
-            if req_arg in ['db_client']:
-                setattr(self, req_arg, kwargs.get(req_arg))
-            else:
-                self.values[req_arg] = kwargs.get(req_arg)
+            self.values[req_arg] = kwargs.get(req_arg)
         ## argument specific requirements
         if not EMAIL_REGEX.match(kwargs[KEY_NAME]):
             message = ("'%s' is not valid '%s'." % (kwargs[KEY_NAME], KEY_NAME))
@@ -50,9 +45,9 @@ class User(object):
             # self._validate_password(str(kwargs['password']))
             self.set_password(str(kwargs['password']))
 
-    def set_key(self, attr, value):
+    def _set_key(self, value):
         """ set the key value """
-        self.key = '%s::%s' % (attr, value)
+        self.key = '%s' % value
         logger.debug("'%s' key set." % self.key)
 
     def set_values(self, values=None):
@@ -69,7 +64,7 @@ class User(object):
 
     def check_password(self, password):
         """ check the password using werkzeug check_password_hash """
-        if not self.values.get('password') or not self.values['password']:
+        if not self.values.get('password', None):
             return None
         return check_password_hash(self.values['password'], password)
 
@@ -94,13 +89,3 @@ class User(object):
     def get_id(self):
         """ return the self.key """
         return self.values[KEY_NAME]
-
-    def add(self):
-        """ add the elasticsearch document and/or children """
-        logger.info("Adding the document for key: '%s'" % self.key)
-        try:
-            data = self.db_client.add(self.key, self.values)
-        except KeyExistsError as error:
-            logger.warn(error)
-            raise
-        return data

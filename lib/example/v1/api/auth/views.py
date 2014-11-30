@@ -6,7 +6,7 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)) +
         '/../../../../../lib')
-#from hmac_sandbox.v1.lib.user.models import User
+from example.v1.lib.user import User
 from flask import Blueprint, jsonify, request, make_response, g
 import json
 import time
@@ -26,7 +26,7 @@ def login():
         logger.warn(message)
         return jsonify(message=message, success=False), 400
     for var in ['email_address', 'password']:
-        if var not in request.json:
+        if not request.json.has_key(var):
             message = "'%s' required." % var
             return jsonify(message=message, success=False), 400
     try:
@@ -35,13 +35,13 @@ def login():
         message = str(error)
         logger.warn(message)
         return jsonify(message=message, success=False), 400
-    data = g.db_client.get(user.key, quiet=True)
-    if not data.success:
+    data = g.db_client.get('example', user.key)
+    if not data.get('found', None):
         logger.warn("'%s' does not exist." % request.json['email_address'])
         message = "Unknown email_address or bad password"
         return jsonify(message=message, success=False), 400
     logger.debug("'%s' successfully found!" % request.json['email_address'])
-    user.set_values(values=data.value)
+    user.set_values(values=data['_source'])
     if not user.check_password(request.json['password']):
         logger.warn("'%s' incorrect password" % request.json['email_address'])
         message = "Unknown email_address or bad password"
@@ -49,5 +49,5 @@ def login():
     message = "'%s' successfully logged in!" % request.json['email_address']
     logger.info(message)
     ## don't return hashed password
-    data.value.pop('password', None)
-    return jsonify(message=message, data=data.value, success=True), 200
+    del(data['_source']['password'])
+    return jsonify(message=message, data=data, success=True), 200
