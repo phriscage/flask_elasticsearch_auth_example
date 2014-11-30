@@ -18,15 +18,19 @@ import example
 
 logger = logging.getLogger(__name__)
 
+ELASTICSEARCH_HOST = '127.0.0.1'
+ELASTICSEARCH_PORT = 9200
+
 def connect_db():
     """ connect to couchbase """
     try:
-        db_client = Elasticsearch()
+        db_client = Elasticsearch(
+            [{'host': ELASTICSEARCH_HOST, 'port': ELASTICSEARCH_PORT}], 
+            use_ssl=True,
+            sniff_on_connection_fail=True,)
     except Exception as error:
         raise
     return db_client
-
-db_client = connect_db()
 
 
 def create_app():
@@ -35,24 +39,23 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(__name__)
 
-    #@app.teardown_appcontext
-    #def shutdown_session(exception=None):
-        #db_session.remove()
+    @app.before_request
+    def before_request():
+        if not hasattr(g, 'db_client'):
+            g.db_client = connect_db()
 
-    @app.errorhandler(400)
-    @app.errorhandler(401)
-    @app.errorhandler(404)
-    @app.errorhandler(405)
-    @app.errorhandler(409)
-    @app.errorhandler(500)
     def default_error_handle(error=None):
-        """ handle all errors with json output """
+        """ create a default json error handle """
         return jsonify(error=str(error), message=error.description,
             success=False), error.code
 
+    ## handle all errors with json output 
+    for error in range(400, 420) + range(500, 506):
+        app.error_handler_spec[None][error] = default_error_handle
+
     ## add each api Blueprint and create the base route
-    #from example.v1.api.auth.views import auth
-    #app.register_blueprint(auth, url_prefix="/v1/auth")
+    from example.v1.api.auth.views import auth
+    app.register_blueprint(auth, url_prefix="/v1/auth")
     #from example.v1.api.users.views import users
     #app.register_blueprint(users, url_prefix="/v1/users")
 
