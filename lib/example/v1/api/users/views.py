@@ -7,10 +7,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)) +
         '/../../../../../lib')
 from example.v1.lib.user import User, KEY_NAME as USER_KEY_NAME
-from flask import Blueprint, jsonify, request, make_response, g
+from flask import Blueprint, jsonify, request, g
 from elasticsearch import TransportError
-import json
-import time
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +28,8 @@ def create():
     data: { 
         'email_address': 'abc@abc.com', 
         'password': 'abc123',
-        'name': 'abc'
+        'first_name': 'abc',
+        'last_name': '123'
     }
 
     **Example response:**
@@ -42,6 +41,8 @@ def create():
 
     :statuscode 200: success
     :statuscode 400: bad data
+    :statuscode 409: already exists
+    :statuscode 500: server error
     """
     if request.content_type != 'application/json' or not request.data:
         message = "Content-Type: 'application/json' required"
@@ -53,7 +54,6 @@ def create():
         message = str(error)
         logger.warn(message)
         return jsonify(message=message, success=False), 400
-    user.set_values()
     data = {}
     try:
         data = g.db_client.get('example', user.key)
