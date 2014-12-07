@@ -5,7 +5,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)) +
-        '/../../../../../lib')
+                '/../../../../../lib')
 from example.v1.lib.user import User, KEY_NAME as USER_KEY_NAME
 from flask import Blueprint, jsonify, request, g
 from elasticsearch import TransportError
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 users = Blueprint('users', __name__)
 
-@users.route('/new', methods=['POST', 'OPTIONS'])
+@users.route('/new', methods=['POST'])
 def create():
     """ create a user and hash their password
 
@@ -25,8 +25,8 @@ def create():
 
     GET /users/new HTTP/1.1
     Accept: application/json
-    data: { 
-        'email_address': 'abc@abc.com', 
+    data: {
+        'email_address': 'abc@abc.com',
         'password': 'abc123',
         'first_name': 'abc',
         'last_name': '123'
@@ -44,7 +44,8 @@ def create():
     :statuscode 409: already exists
     :statuscode 500: server error
     """
-    if request.content_type != 'application/json' or not request.data:
+
+    if not request.json:
         message = "Content-Type: 'application/json' required"
         logger.warn(message)
         return jsonify(message=message, success=False), 400
@@ -67,8 +68,13 @@ def create():
         logger.warn(message)
         return jsonify(message=message, success=False), 409
     try:
-        data = g.db_client.index(index='example', doc_type=user.values['_type'],
-            id=user.key, body=user.values)
+        args = {
+            'index': 'example',
+            'id': user.key,
+            'body': user.values,
+            'doc_type': user.values['_type']
+        }
+        data = g.db_client.index(**args)
     except Exception as error:
         message = str(error)
         logger.warn(message)

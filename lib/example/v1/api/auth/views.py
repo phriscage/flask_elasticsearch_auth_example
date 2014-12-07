@@ -5,7 +5,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)) +
-        '/../../../../../lib')
+                '/../../../../../lib')
 from example.v1.lib.user import User
 from flask import Blueprint, jsonify, request, g
 from elasticsearch import TransportError
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 auth = Blueprint('auth', __name__)
 
-@auth.route('/login', methods=['POST', 'OPTIONS'])
+@auth.route('/login', methods=['POST'])
 def login():
     """ check if the user exists and verify if their password is correct
 
@@ -42,7 +42,7 @@ def login():
     :statuscode 400: bad data
     :statuscode 500: server error
     """
-    if request.content_type != 'application/json' or not request.data:
+    if not request.json:
         message = "Content-Type: 'application/json' required"
         logger.warn(message)
         return jsonify(message=message, success=False), 400
@@ -61,17 +61,17 @@ def login():
             message = "Something broke... We are looking into it!"
             return jsonify(message=message, success=False), 500
     if not data.get('found', None):
-        logger.warn("'%s' does not exist." % request.json['email_address'])
+        logger.warn("'%s' does not exist.", request.json['email_address'])
         message = "Unknown email_address or bad password"
         return jsonify(message=message, success=False), 400
-    logger.debug("'%s' successfully found!" % request.json['email_address'])
+    logger.debug("'%s' successfully found!", request.json['email_address'])
     user.set_values(values=data['_source'])
     if not user.check_password(request.json['password']):
-        logger.warn("'%s' incorrect password" % request.json['email_address'])
+        logger.warn("'%s' incorrect password", request.json['email_address'])
         message = "Unknown email_address or bad password"
         return jsonify(message=message, success=False), 400
     message = "'%s' successfully logged in!" % request.json['email_address']
     logger.info(message)
     ## don't return hashed password
-    del(data['_source']['password'])
+    del data['_source']['password']
     return jsonify(message=message, data=data, success=True), 200

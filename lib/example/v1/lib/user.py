@@ -2,25 +2,21 @@
     user.py
 """
 from __future__ import absolute_import
-import os
-import sys
-sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)) + 
-    '/../../../../lib')
 import time
 import re
 import logging
 from werkzeug.security import generate_password_hash, check_password_hash
 
-EMAIL_REGEX = re.compile(r'[^@]+@[^@]+\.[^@]+')
-REQUIRED_ARGS = ('email_address', 'password',)
-VALID_ARGS = REQUIRED_ARGS + ('first_name', 'last_name',)
 KEY_NAME = 'email_address'
+REQUIRED_ARGS = (KEY_NAME, 'password',)
+VALID_ARGS = REQUIRED_ARGS + ('first_name', 'last_name',)
+EMAIL_REGEX = re.compile(r'[^@]+@[^@]+\.[^@]+')
 
 logger = logging.getLogger(__name__)
 
 class User(object):
     """ encapsulate the user as an object """
-    
+
     def __init__(self, **kwargs):
         """ instantiate the class """
         self.key = None
@@ -50,7 +46,7 @@ class User(object):
     def _set_key(self, value):
         """ set the key value """
         self.key = '%s' % value
-        logger.debug("'%s' key set." % self.key)
+        logger.debug("'%s' key set.", self.key)
 
     def _set_values(self):
         """ set the default values """
@@ -65,7 +61,7 @@ class User(object):
             self.values['created_at'] = time.time()
         else:
             self.values = values
-        
+
     def set_password(self, password):
         """ set the password using werkzeug generate_password_hash """
         self.values['password'] = generate_password_hash(password)
