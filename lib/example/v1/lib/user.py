@@ -8,7 +8,8 @@ import logging
 from werkzeug.security import generate_password_hash, check_password_hash
 
 KEY_NAME = 'email_address'
-REQUIRED_ARGS = (KEY_NAME, 'password',)
+#REQUIRED_ARGS = (KEY_NAME, 'password',)
+REQUIRED_ARGS = (KEY_NAME,)
 VALID_ARGS = REQUIRED_ARGS + ('first_name', 'last_name',)
 EMAIL_REGEX = re.compile(r'[^@]+@[^@]+\.[^@]+')
 
@@ -76,7 +77,7 @@ class User(object):
         """ should just return True unless the object represents a user
             that should not be allowed to authenticate for some reason.
         """
-        if not self.is_anonymous():
+        if self.is_anonymous():
             return False
         return True
 

@@ -2,20 +2,50 @@
 """
 API bootstrap file
 """
-from flask import Flask, jsonify, g
-from elasticsearch import Elasticsearch
-import sys
 import os
+import sys
 import argparse
 import logging
+from flask import Flask, jsonify, g
+from flask.ext.login import LoginManager, current_user
+from elasticsearch import Elasticsearch
 
 sys.path.insert(0, os.path.dirname(
     os.path.realpath(__file__)) + '/../../../../lib')
 
+from example.v1.lib.user import User
+
+APP_SECRET_KEY = os.urandom(32)
+
 logger = logging.getLogger(__name__)
+
+login_manager = LoginManager()
 
 #ELASTICSEARCH_HOST = '127.0.0.1'
 #ELASTICSEARCH_PORT = 9200
+
+@login_manager.user_loader
+def load_user(email_address):
+    try:
+        user = User(email_address=email_address)
+    except ValueError as error:
+        message = str(error)
+        logger.warn(message)
+        return None
+    data = {}
+    try:
+        data = g.db_client.get('example', user.key)
+    except (TransportError, Exception) as error:
+        if not getattr(error, 'status_code', None) == 404:
+            logger.critical(str(error))
+            return None
+    if not data.get('found', None):
+        message = "'%s' does not exist." % email_address
+        logger.warn(message)
+        return None
+    user.set_values(values=data['_source'])
+    return user
+
 
 def connect_db():
     """ connect to couchbase """
@@ -35,12 +65,17 @@ def create_app():
     #app = Flask(__name__, static_url_path='')
     app = Flask(__name__)
     app.config.from_object(__name__)
+    app.secret_key = APP_SECRET_KEY
+    login_manager.init_app(app)
 
     @app.before_request
     def before_request():
         """ create the db_client global if it does not exist """
         if not hasattr(g, 'db_client'):
             g.db_client = connect_db()
+        if not hasattr(g, 'user'):
+            g.user = current_user
+
 
     def default_error_handle(error=None):
         """ create a default json error handle """
@@ -56,6 +91,8 @@ def create_app():
     app.register_blueprint(auth, url_prefix="/v1/auth")
     from example.v1.api.users.views import users
     app.register_blueprint(users, url_prefix="/v1/users")
+    from example.v1.api.test.views import test
+    app.register_blueprint(test, url_prefix="/v1/test")
 
     return app
 

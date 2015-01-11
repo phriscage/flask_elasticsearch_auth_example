@@ -7,7 +7,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)) +
                 '/../../../../../lib')
 from example.v1.lib.user import User
-from flask import Blueprint, jsonify, request, g
+from flask import Blueprint, jsonify, request, g, session
+from flask.ext.login import login_user, current_user, logout_user
 from elasticsearch import TransportError
 import logging
 
@@ -70,8 +71,17 @@ def login():
         logger.warn("'%s' incorrect password", request.json['email_address'])
         message = "Unknown email_address or bad password"
         return jsonify(message=message, success=False), 400
+    login_user(user)
     message = "'%s' successfully logged in!" % request.json['email_address']
     logger.info(message)
     ## don't return hashed password
     del data['_source']['password']
     return jsonify(message=message, data=data, success=True), 200
+
+@auth.route('/logout')
+def logout():
+    """ logout the user and redirect to home """
+    logout_user()
+    logger.debug("logging out: '%s'", request)
+    message = "Successfully logged out. See you soon!"
+    return jsonify(message=message, success=True), 200
