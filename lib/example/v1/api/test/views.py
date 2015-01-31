@@ -17,13 +17,14 @@ test = Blueprint('test', __name__)
 @test.route('')
 @login_required
 def index():
-    """ return the test cookie for a logged-in user
+    """ test the login_required decorator and return the cookie for a logged-in
+    user
 
     **Example request:**
 
     .. sourcecode:: http
 
-    GET /test HTTP/1.1
+    GET / HTTP/1.1
     Accept: */*
 
     **Example response:**
@@ -34,10 +35,9 @@ def index():
     Content-Type: application/json
 
     :statuscode 200: success
-    :statuscode 400: bad data
     :statuscode 500: server error
     """
-    data = { 'cookies': request.cookies }
+    data = {'cookies': request.cookies}
     message = "Test"
     logger.info(message)
     return jsonify(message=message, data=data, success=True), 200

@@ -7,8 +7,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)) +
                 '/../../../../../lib')
 from example.v1.lib.user import User
-from flask import Blueprint, jsonify, request, g, session
-from flask.ext.login import login_user, current_user, logout_user
+from flask import Blueprint, jsonify, request, g
+from flask.ext.login import login_user, logout_user
 from elasticsearch import TransportError
 import logging
 
@@ -24,12 +24,11 @@ def login():
 
     .. sourcecode:: http
 
-    GET /users/new HTTP/1.1
+    POST /login HTTP/1.1
     Accept: application/json
     data: {
         'email_address': 'abc@abc.com',
         'password': 'abc123',
-        'name': 'abc'
     }
 
     **Example response:**
@@ -78,9 +77,26 @@ def login():
     del data['_source']['password']
     return jsonify(message=message, data=data, success=True), 200
 
-@auth.route('/logout')
+@auth.route('/logout', methods='POST')
 def logout():
-    """ logout the user and redirect to home """
+    """ logout the user and redirect to home
+
+    **Example request:**
+
+    .. sourcecode:: http
+
+    POST /logout HTTP/1.1
+    Accept: application/json
+
+    **Example response:**
+
+    .. sourcecode:: http
+
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    :statuscode 200: success
+    """
     logout_user()
     logger.debug("logging out: '%s'", request)
     message = "Successfully logged out. See you soon!"
