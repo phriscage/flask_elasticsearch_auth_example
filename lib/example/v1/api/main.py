@@ -12,9 +12,10 @@ from elasticsearch import Elasticsearch
 
 sys.path.insert(0, os.path.dirname(
     os.path.realpath(__file__)) + '/../../../../lib')
-
+#print(sys.path)
 from example.v1.lib.user import User
-
+#from example.v1.api.auth.views import auth
+#from example.v1.api.users.views import users
 APP_SECRET_KEY = os.urandom(32)
 
 logger = logging.getLogger(__name__)
